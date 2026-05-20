@@ -1,11 +1,18 @@
 {
-  "name": "opencode-session-search",
+  "name": "@sureshmol/opencode-session-search",
   "version": "0.1.0",
   "description": "Search across all OpenCode sessions with full-text search",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
-  "keywords": ["opencode", "plugin", "search", "sessions"],
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "opencode",
+    "plugin",
+    "search",
+    "sessions"
+  ],
   "author": "",
   "license": "MIT",
   "scripts": {
