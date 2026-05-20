@@ -2,6 +2,24 @@ import { tool } from "@opencode-ai/plugin"
 import type { Database } from "./db"
 import { searchSessions } from "./search"
 
+export function createOpenSessionTool(client: any) {
+  return tool({
+    description:
+      "Open/switch to a specific OpenCode session by its ID. Use this after search_sessions to navigate to a found session.",
+    args: {
+      session_id: tool.schema.string().describe("The session ID to open (e.g. ses_1bf72c56dffeYs1SCP40tnL4zF)"),
+    },
+    async execute(args) {
+      try {
+        await client.tui.executeCommand({ body: { command: `/session ${args.session_id}` } })
+        return `Switched to session ${args.session_id}`
+      } catch (err) {
+        return `Failed to switch session: ${err}`
+      }
+    },
+  })
+}
+
 export function createSearchTool(db: Database) {
   return tool({
     description:

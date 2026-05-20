@@ -3,7 +3,7 @@ import { join } from "path"
 import { homedir } from "os"
 import { createDatabase } from "./db"
 import { backfillSessions, indexMessage } from "./indexer"
-import { createSearchTool } from "./tool"
+import { createSearchTool, createOpenSessionTool } from "./tool"
 import { searchSessions } from "./search"
 
 const DB_PATH = join(homedir(), ".local", "share", "opencode-session-search", "index.db")
@@ -85,6 +85,7 @@ export const SessionSearchPlugin: Plugin = async ({ client, directory }) => {
 
     tool: {
       search_sessions: createSearchTool(db),
+      open_session: createOpenSessionTool(client),
     },
   }
 }
