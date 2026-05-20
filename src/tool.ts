@@ -5,16 +5,23 @@ import { searchSessions } from "./search"
 export function createOpenSessionTool(client: any) {
   return tool({
     description:
-      "Open/switch to a specific OpenCode session by its ID. Use this after search_sessions to navigate to a found session.",
+      "Open/switch to a specific OpenCode session by its ID. Use this after search_sessions to navigate to a found session. Opens the session picker with the ID pre-filled.",
     args: {
       session_id: tool.schema.string().describe("The session ID to open (e.g. ses_1bf72c56dffeYs1SCP40tnL4zF)"),
     },
     async execute(args) {
       try {
-        await client.tui.executeCommand({ body: { command: `/session ${args.session_id}` } })
+        // Try switching via resume command
+        await client.tui.executeCommand({ body: { command: `resume ${args.session_id}` } })
         return `Switched to session ${args.session_id}`
-      } catch (err) {
-        return `Failed to switch session: ${err}`
+      } catch {
+        try {
+          // Fallback: open session picker and append ID to prompt
+          await client.tui.openSessions({})
+          return `Opened session picker. Look for session: ${args.session_id}`
+        } catch (err) {
+          return `Could not auto-switch. To open this session manually, use the session picker (ctrl+p) and search for: ${args.session_id}`
+        }
       }
     },
   })
