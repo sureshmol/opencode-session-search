@@ -25,7 +25,7 @@ export function indexMessage(db: Database, message: MessageRow): void {
 
 export function indexSession(
   db: Database,
-  session: { id: string; title?: string | null; createdAt?: string },
+  session: { id: string; title?: string | null; createdAt?: string; parentId?: string | null },
   messages: { info: { id: string; role: string; createdAt?: string }; parts: any[] }[],
   workspace: string
 ): void {
@@ -35,6 +35,7 @@ export function indexSession(
     workspace,
     projectPath: workspace,
     createdAt: session.createdAt ?? new Date().toISOString(),
+    parentId: session.parentId ?? null,
   })
 
   for (const msg of messages) {
@@ -106,7 +107,7 @@ function backfillFromOpencodeDb(db: Database): number {
   let indexed = 0
   try {
     const sessions = ocDb.prepare(`
-      SELECT id, title, directory, time_created FROM session
+      SELECT id, title, directory, parent_id, time_created FROM session
       ORDER BY time_created DESC
     `).all() as any[]
 
@@ -119,6 +120,7 @@ function backfillFromOpencodeDb(db: Database): number {
         workspace: session.directory ?? "",
         projectPath: session.directory ?? "",
         createdAt: new Date(session.time_created).toISOString(),
+        parentId: session.parent_id ?? null,
       })
 
       // Index text parts for this session

@@ -8,6 +8,7 @@ export interface SessionRow {
   workspace: string
   projectPath: string
   createdAt: string
+  parentId?: string | null
 }
 
 export interface MessageRow {
@@ -36,6 +37,7 @@ const SCHEMA_TABLES = `
     title TEXT,
     workspace TEXT,
     project_path TEXT,
+    parent_id TEXT,
     created_at TEXT,
     updated_at TEXT,
     indexed_at TEXT DEFAULT (datetime('now'))
@@ -87,8 +89,8 @@ export function createDatabase(dbPath: string): Database {
   raw.exec(SCHEMA_TRIGGERS)
 
   const upsertSessionStmt = raw.prepare(`
-    INSERT INTO sessions (id, title, workspace, project_path, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, datetime('now'))
+    INSERT INTO sessions (id, title, workspace, project_path, parent_id, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
     ON CONFLICT(id) DO UPDATE SET
       title = excluded.title,
       updated_at = datetime('now')
@@ -107,7 +109,7 @@ export function createDatabase(dbPath: string): Database {
   return {
     raw,
     upsertSession(session) {
-      upsertSessionStmt.run(session.id, session.title, session.workspace, session.projectPath, session.createdAt)
+      upsertSessionStmt.run(session.id, session.title, session.workspace, session.projectPath, session.parentId ?? null, session.createdAt)
     },
     insertMessage(message) {
       insertMessageStmt.run(message.id, message.sessionId, message.role, message.content.slice(0, 10240), message.toolName, message.createdAt)

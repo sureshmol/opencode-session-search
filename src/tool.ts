@@ -5,21 +5,26 @@ import { searchSessions } from "./search"
 export function createListSessionsTool(db: Database) {
   return tool({
     description:
-      "List all OpenCode sessions across all workspaces, sorted by most recent. Use this to browse past sessions, see what work was done across projects, or find a session to resume.",
+      "List all OpenCode sessions across all workspaces, sorted by most recent. By default only shows main sessions (excludes subagent sessions). Set include_subagents to true to include them.",
     args: {
       limit: tool.schema.number().describe("Max results to return, default 25").optional(),
       workspace: tool.schema.string().describe("Filter by workspace/project path").optional(),
       date_from: tool.schema.string().describe("Only sessions after this date (ISO format)").optional(),
       date_to: tool.schema.string().describe("Only sessions before this date (ISO format)").optional(),
+      include_subagents: tool.schema.boolean().describe("Include subagent sessions, default false").optional(),
     },
     async execute(args) {
       const limit = args.limit ?? 25
       let sql = `
-        SELECT id, title, workspace, created_at
+        SELECT id, title, workspace, created_at, parent_id
         FROM sessions
         WHERE 1=1
       `
       const params: any[] = []
+
+      if (!args.include_subagents) {
+        sql += " AND (parent_id IS NULL OR parent_id = '')"
+      }
 
       if (args.workspace) {
         sql += " AND workspace LIKE ?"
