@@ -2,6 +2,57 @@ import { tool } from "@opencode-ai/plugin"
 import type { Database } from "./db"
 import { searchSessions } from "./search"
 
+export function createListSessionsTool(db: Database) {
+  return tool({
+    description:
+      "List all OpenCode sessions across all workspaces, sorted by most recent. Use this to browse past sessions, see what work was done across projects, or find a session to resume.",
+    args: {
+      limit: tool.schema.number().describe("Max results to return, default 25").optional(),
+      workspace: tool.schema.string().describe("Filter by workspace/project path").optional(),
+      date_from: tool.schema.string().describe("Only sessions after this date (ISO format)").optional(),
+      date_to: tool.schema.string().describe("Only sessions before this date (ISO format)").optional(),
+    },
+    async execute(args) {
+      const limit = args.limit ?? 25
+      let sql = `
+        SELECT id, title, workspace, created_at
+        FROM sessions
+        WHERE 1=1
+      `
+      const params: any[] = []
+
+      if (args.workspace) {
+        sql += " AND workspace LIKE ?"
+        params.push(`%${args.workspace}%`)
+      }
+      if (args.date_from) {
+        sql += " AND created_at >= ?"
+        params.push(args.date_from)
+      }
+      if (args.date_to) {
+        sql += " AND created_at <= ?"
+        params.push(args.date_to)
+      }
+
+      sql += " ORDER BY created_at DESC LIMIT ?"
+      params.push(limit)
+
+      const rows = db.raw.prepare(sql).all(...params) as any[]
+
+      if (rows.length === 0) return "No sessions found."
+
+      return rows
+        .map(
+          (r, i) =>
+            `${i + 1}. **${r.title || "Untitled"}** (${r.id})\n` +
+            `   Workspace: ${r.workspace}\n` +
+            `   Date: ${r.created_at}`
+        )
+        .join("\n\n")
+    },
+  })
+}
+
 export function createOpenSessionTool(client: any) {
   return tool({
     description:
